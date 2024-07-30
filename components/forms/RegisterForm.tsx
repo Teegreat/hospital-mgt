@@ -8,12 +8,17 @@ import { Button } from "../ui/button";
 import CustomFormField from "../CustomFormField";
 import SubmitButton from "../SubmitButton";
 import { useState } from "react";
-import { UserFormValidation } from "@/lib/validation";
+import { PatientFormValidation, UserFormValidation } from "@/lib/validation";
 import { useRouter } from "next/navigation";
-import { createUser } from "@/lib/actions/patient.actions";
+import { createUser, registerPatient } from "@/lib/actions/patient.actions";
 import { FormFieldType } from "./PatientForm";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { Doctors, GenderOptions, IdentificationTypes } from "@/constants";
+import {
+  Doctors,
+  GenderOptions,
+  IdentificationTypes,
+  PatientFormDefaultValues,
+} from "@/constants";
 import { Label } from "../ui/label";
 import { SelectItem } from "../ui/select";
 import Image from "next/image";
@@ -23,34 +28,58 @@ const RegisterForm = ({ user }: { user: User }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof UserFormValidation>>({
-    resolver: zodResolver(UserFormValidation),
+  const form = useForm<z.infer<typeof PatientFormValidation>>({
+    resolver: zodResolver(PatientFormValidation),
     defaultValues: {
+      ...PatientFormDefaultValues,
       name: "",
       email: "",
       phone: "",
     },
   });
 
-  async function onSubmit({
-    name,
-    email,
-    phone,
-  }: z.infer<typeof UserFormValidation>) {
+  async function onSubmit(values: z.infer<typeof PatientFormValidation>) {
     setIsLoading(true);
 
+    let formData;
+
+    if (
+      values.identificationDocument &&
+      values.identificationDocument.length > 0
+    ) {
+      const blobFile = new Blob([values.identificationDocument[0]], {
+        type: values.identificationDocument[0].type,
+      });
+
+      formData = new FormData();
+      formData.append("blobFile", blobFile);
+      formData.append("fileName", values.identificationDocument[0].name);
+    }
+
     try {
-      const userData = {
-        name,
-        email,
-        phone,
+      // Debugging: Print the user object and user ID
+      console.log("User Object:", user);
+      console.log("User ID:", user?.$id);
+
+      // Validate user ID
+      if (!user?.$id || user.$id.length > 36 || user.$id.startsWith("_")) {
+        throw new Error("Invalid user ID");
+      }
+
+      const patientData = {
+        ...values,
+        userId: user.$id,
+        birthDate: new Date(values.birthDate),
+        identificationDocument: formData,
       };
 
-      const user = await createUser(userData);
+      // @ts-ignore
+      const patient = await registerPatient(patientData);
 
-      if (user) router.push("/patients/${user.$id}/register");
+      if (patient) router.push(`/patients/${user.$id}/new-appointment`);
     } catch (error) {
       console.log(error);
+      setIsLoading(false); // Reset loading state on error
     }
   }
   return (
@@ -284,10 +313,10 @@ const RegisterForm = ({ user }: { user: User }) => {
           fieldType={FormFieldType.SKELETON}
           control={form.control}
           name="identificationDocument"
-          label="Scanned copy of identification document"
+          label="Scanned Copy of Identification Document"
           renderSkeleton={(field) => (
             <FormControl>
-              <FileUploader files={field.value} onChange={field.onchange} />
+              <FileUploader files={field.value} onChange={field.onChange} />
             </FormControl>
           )}
         />
