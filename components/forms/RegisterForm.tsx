@@ -13,12 +13,7 @@ import { useRouter } from "next/navigation";
 import { createUser, registerPatient } from "@/lib/actions/patient.actions";
 import { FormFieldType } from "./PatientForm";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import {
-  Doctors,
-  GenderOptions,
-  IdentificationTypes,
-  PatientFormDefaultValues,
-} from "@/constants";
+import { Doctors, GenderOptions, IdentificationTypes, PatientFormDefaultValues } from "@/constants";
 import { Label } from "../ui/label";
 import { SelectItem } from "../ui/select";
 import Image from "next/image";
@@ -32,28 +27,25 @@ const RegisterForm = ({ user }: { user: User }) => {
     resolver: zodResolver(PatientFormValidation),
     defaultValues: {
       ...PatientFormDefaultValues,
-      name: "",
-      email: "",
-      phone: "",
+      name: '',
+      email: '',
+      phone: '',
     },
   });
 
-  async function onSubmit(values: z.infer<typeof PatientFormValidation>) {
+  async function onSubmit( values: z.infer<typeof PatientFormValidation>) {
     setIsLoading(true);
 
-    let formData;
+    let formData
 
-    if (
-      values.identificationDocument &&
-      values.identificationDocument.length > 0
-    ) {
+    if (values.identificationDocument && values.identificationDocument.length > 0 ) {
       const blobFile = new Blob([values.identificationDocument[0]], {
-        type: values.identificationDocument[0].type,
-      });
+        type: values.identificationDocument[0].type
+      })
 
-      formData = new FormData();
-      formData.append("blobFile", blobFile);
-      formData.append("fileName", values.identificationDocument[0].name);
+      formData = new FormData()
+      formData.append("blobFile", blobFile)
+      formData.append('fileName', values.identificationDocument[0].name)
     }
 
     try {
@@ -80,7 +72,7 @@ const RegisterForm = ({ user }: { user: User }) => {
     } catch (error) {
       console.log(error);
       setIsLoading(false); // Reset loading state on error
-    }
+    } 
   }
   return (
     <Form {...form}>
