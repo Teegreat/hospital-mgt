@@ -14,24 +14,19 @@ const Success = async ({
 
   const appointmentData = await getAppointment(appointmentId);
 
-  // Log the entire appointment data structure to see if it's correct
+  // Log the appointment data
   console.log("Appointment data structure:", appointmentData);
 
-  // Assuming appointmentData.documents[0] is the relevant appointment
-  const appointment = appointmentData?.documents[0];
-
-  // Check if appointment is valid
-  if (!appointment) {
-    console.error("No appointment found");
-    return <div>No appointment found</div>;
-  }
-
-  const doctor = Doctors.find(
-    (doc) => doc.name === appointment.primaryPhysician
+  // Filter appointments by the current userId
+  const userAppointments = appointmentData?.documents.filter(
+    (appointment) => appointment.userId === userId
   );
 
-  console.log("Appointment:", appointment);
-  console.log("Doctor:", doctor);
+  // Check if any appointments are found for the current user
+  if (!userAppointments || userAppointments.length === 0) {
+    console.error("No appointments found for this user");
+    return <div>No appointments found for this user</div>;
+  }
 
   return (
     <div className="flex h-screen max-h-screen px=[5%]">
@@ -62,25 +57,37 @@ const Success = async ({
 
         <section className="request-details">
           <p>Requested appointment details:</p>
-          <div className="flex items-center gap-3">
-            <Image
-              src={doctor?.image || "/default-doctor-image.jpg"} // Handle missing image
-              alt="doctor"
-              width={100}
-              height={100}
-              className="size-6"
-            />
-            <p className="whitespace-nowrap">Dr. {doctor?.name || "Unknown"}</p>
-          </div>
-          <div className="flex gap-2">
-            <Image
-              src="/assets/icons/calendar.svg"
-              height={24}
-              width={24}
-              alt="calendar"
-            />
-            <p>{formatDateTime(appointment.schedule).dateTime}</p>
-          </div>
+          {/* Iterate over userAppointments and render each one */}
+          {userAppointments.map((appointment) => {
+            const doctor = Doctors.find(
+              (doc) => doc.name === appointment.primaryPhysician
+            );
+            return (
+              <div key={appointment.$id} className="mb-6">
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={doctor?.image || "/default-doctor-image.jpg"} // Handle missing image
+                    alt="doctor"
+                    width={100}
+                    height={100}
+                    className="size-6"
+                  />
+                  <p className="whitespace-nowrap">
+                    Dr. {doctor?.name || "Unknown"}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Image
+                    src="/assets/icons/calendar.svg"
+                    height={24}
+                    width={24}
+                    alt="calendar"
+                  />
+                  <p>{formatDateTime(appointment.schedule).dateTime}</p>
+                </div>
+              </div>
+            );
+          })}
         </section>
 
         <Button variant="outline" className="shad-primary-btn" asChild>
